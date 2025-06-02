@@ -48,7 +48,8 @@ app.use(session({
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         sameSite: 'none',
-        domain: '.onrender.com' // Allow cookies across subdomains
+        domain: '.onrender.com', // Allow cookies across subdomains
+        path: '/' // Ensure cookie is available for all paths
     }
 }));
 
@@ -246,7 +247,7 @@ app.post('/register', async (req, res) => {
 // Login endpoint with rate limiting
 app.post('/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email); // Debug log
+    console.log('Login attempt for email:', email);
 
     try {
         // Validate required fields
@@ -259,24 +260,29 @@ app.post('/login', loginLimiter, async (req, res) => {
         const user = users.find(user => user[2] === email); // email is at index 2
 
         if (!user) {
-            console.log('User not found'); // Debug log
+            console.log('User not found');
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
         // Verify password
         const validPassword = await bcrypt.compare(password, user[3]); // password is at index 3
         if (!validPassword) {
-            console.log('Invalid password'); // Debug log
+            console.log('Invalid password');
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
         // Create session
         req.session.userId = user[0]; // id is at index 0
-        console.log('Session created with userId:', user[0]); // Debug log
-        
-        res.json({ 
-            success: true,
-            redirectUrl: 'https://diabetes-kwrz.onrender.com/'
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ error: 'Login failed. Please try again.' });
+            }
+            console.log('Session created with userId:', user[0]);
+            res.json({ 
+                success: true,
+                redirectUrl: 'https://diabetes-kwrz.onrender.com/'
+            });
         });
     } catch (error) {
         console.error('Login error:', error);
@@ -290,19 +296,29 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
+// Add a session check endpoint
+app.get('/api/check-session', (req, res) => {
+    console.log('Session check:', req.session);
+    if (req.session.userId) {
+        res.json({ authenticated: true, userId: req.session.userId });
+    } else {
+        res.json({ authenticated: false });
+    }
+});
+
 // Get user data endpoint
 app.get('/api/user', async (req, res) => {
-    console.log('Session data:', req.session); // Debug log
+    console.log('Session data:', req.session);
     if (!req.session.userId) {
-        console.log('No user ID in session'); // Debug log
+        console.log('No user ID in session');
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
         const users = await getAllUsers();
-        console.log('All users:', users); // Debug log
+        console.log('All users:', users);
         const user = users.find(user => user[0] === req.session.userId.toString());
-        console.log('Found user:', user); // Debug log
+        console.log('Found user:', user);
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -319,7 +335,7 @@ app.get('/api/user', async (req, res) => {
             profileImage: user[8] || '/default-avatar.png'
         };
 
-        console.log('Sending user data:', userData); // Debug log
+        console.log('Sending user data:', userData);
         res.json(userData);
     } catch (error) {
         console.error('Error fetching user data:', error);
