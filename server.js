@@ -33,23 +33,23 @@ app.use(cors({
     origin: ['https://diabetes-kwrz.onrender.com', 'https://diabetes-node-server.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['Set-Cookie']
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: true,
-    saveUninitialized: true,
-    cookie: { 
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
         secure: true,
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
         sameSite: 'none',
-        domain: '.onrender.com', // Allow cookies across subdomains
-        path: '/' // Ensure cookie is available for all paths
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        domain: '.onrender.com' // Allow cookies across subdomains
     }
 }));
 
@@ -279,6 +279,17 @@ app.post('/login', loginLimiter, async (req, res) => {
                 return res.status(500).json({ error: 'Login failed. Please try again.' });
             }
             console.log('Session created with userId:', user[0]);
+            
+            // Set additional cookie for cross-domain access
+            res.cookie('userId', user[0], {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000,
+                domain: 'diabetes-node-server.onrender.com',
+                path: '/'
+            });
+
             res.json({ 
                 success: true,
                 redirectUrl: 'https://diabetes-kwrz.onrender.com/'
@@ -299,8 +310,12 @@ app.get('/logout', (req, res) => {
 // Add a session check endpoint
 app.get('/api/check-session', (req, res) => {
     console.log('Session check:', req.session);
-    if (req.session.userId) {
-        res.json({ authenticated: true, userId: req.session.userId });
+    console.log('Cookies:', req.cookies);
+    if (req.session.userId || req.cookies.userId) {
+        res.json({ 
+            authenticated: true, 
+            userId: req.session.userId || req.cookies.userId 
+        });
     } else {
         res.json({ authenticated: false });
     }
@@ -309,15 +324,18 @@ app.get('/api/check-session', (req, res) => {
 // Get user data endpoint
 app.get('/api/user', async (req, res) => {
     console.log('Session data:', req.session);
-    if (!req.session.userId) {
-        console.log('No user ID in session');
+    console.log('Cookies:', req.cookies);
+    
+    const userId = req.session.userId || req.cookies.userId;
+    if (!userId) {
+        console.log('No user ID in session or cookies');
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
         const users = await getAllUsers();
         console.log('All users:', users);
-        const user = users.find(user => user[0] === req.session.userId.toString());
+        const user = users.find(user => user[0] === userId.toString());
         console.log('Found user:', user);
 
         if (!user) {
