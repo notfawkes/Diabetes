@@ -551,7 +551,7 @@ app.post('/predict', predictLimiter, async (req, res) => {
 
         console.log('Formatted prediction data:', predictionData);
 
-        // Use the correct Python service URL
+        // Use the correct Python service URL with port 10000 (Render's default)
         const pythonServiceUrl = 'https://diabetes-kwrz.onrender.com';
         
         try {

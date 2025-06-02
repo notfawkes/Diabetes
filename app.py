@@ -11,6 +11,8 @@ CORS(app)  # Enable CORS for all routes
 model = joblib.load('diabetes_model.joblib')
 scaler = joblib.load('scaler.joblib')
 
+port = int(os.environ.get('PORT', 10000))
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -53,5 +55,4 @@ def predict():
         }), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port) 
