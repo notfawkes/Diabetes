@@ -29,7 +29,12 @@ const predictLimiter = rateLimit({
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['https://diabetes-kwrz.onrender.com', 'https://diabetes-node-server.onrender.com'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -38,10 +43,11 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'strict'
+        sameSite: 'none',
+        domain: '.onrender.com' // Allow cookies across subdomains
     }
 }));
 
@@ -226,7 +232,10 @@ app.post('/register', async (req, res) => {
 
         // Create session
         req.session.userId = userId;
-        res.json({ success: true });
+        res.json({ 
+            success: true,
+            redirectUrl: 'https://diabetes-kwrz.onrender.com/dashboard'
+        });
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ error: 'Registration failed. Please try again.' });
@@ -259,7 +268,10 @@ app.post('/login', loginLimiter, async (req, res) => {
 
         // Create session
         req.session.userId = user[0]; // id is at index 0
-        res.json({ success: true });
+        res.json({ 
+            success: true,
+            redirectUrl: 'https://diabetes-kwrz.onrender.com/dashboard'
+        });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Login failed. Please try again.' });
