@@ -33,7 +33,8 @@ app.use(cors({
     origin: ['https://diabetes-kwrz.onrender.com', 'https://diabetes-node-server.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -302,10 +303,10 @@ app.get('/api/user', async (req, res) => {
             id: user[0],
             name: user[1],
             email: user[2],
-            age: user[4],
-            weight: user[5],
-            height: user[6],
-            bmi: user[7],
+            age: parseInt(user[4]),
+            weight: parseFloat(user[5]),
+            height: parseFloat(user[6]),
+            bmi: parseFloat(user[7]),
             profileImage: user[8] || '/default-avatar.png'
         });
     } catch (error) {
@@ -386,7 +387,10 @@ app.post('/predict', predictLimiter, async (req, res) => {
 
         const data = await response.json();
         console.log('Prediction response:', data);
-        res.json(data);
+        res.json({
+            prediction: data.prediction,
+            probability: data.probability
+        });
     } catch (error) {
         console.error('Prediction error:', error);
         res.status(500).json({ 
