@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - DiabetesCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand {
+            color: #2d8659;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: #495057;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-links a:hover {
+            color: #2d8659;
+        }
+
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            display: flex;
+            gap: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+
+        .profile-details {
+            flex: 1;
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: slideInLeft 0.6s ease;
+        }
+
+        .profile-image {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInRight 0.6s ease;
+        }
+
+        .image-container {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #2d8659, #1a472a);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(45, 134, 89, 0.2);
+        }
+
+        .detail-group {
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .detail-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .detail-value {
+            color: #2d8659;
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .edit-btn {
+            background: linear-gradient(45deg, #2d8659, #1a472a);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(45, 134, 89, 0.2);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column-reverse;
+                padding: 1rem;
+            }
+
+            .profile-image {
+                align-items: center;
+            }
+
+            .image-container {
+                width: 200px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard" class="brand">
+            <i class="fas fa-heartbeat"></i>
+            DiabetesCare
+        </a>
+        <div class="nav-links">
+            <a href="/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="profile-details">
+            <h1 style="color: #2d8659; margin-bottom: 2rem;">Profile Information</h1>
+            
+            <div class="detail-group">
+                <div class="detail-label">Full Name</div>
+                <div class="detail-value">
+                    <i class="fas fa-user"></i>
+                    <span id="userName">Loading...</span>
+                </div>
+            </div>
+
+            <div class="detail-group">
+                <div class="detail-label">Email Address</div>
+                <div class="detail-value">
+                    <i class="fas fa-envelope"></i>
+                    <span id="userEmail">Loading...</span>
+                </div>
+            </div>
+
+            <div class="detail-group">
+                <div class="detail-label">Age</div>
+                <div class="detail-value">
+                    <i class="fas fa-birthday-cake"></i>
+                    <span id="userAge">Loading...</span> years
+                </div>
+            </div>
+
+            <div class="detail-group">
+                <div class="detail-label">Weight</div>
+                <div class="detail-value">
+                    <i class="fas fa-weight"></i>
+                    <span id="userWeight">Loading...</span> kg
+                </div>
+            </div>
+
+            <div class="detail-group">
+                <div class="detail-label">Height</div>
+                <div class="detail-value">
+                    <i class="fas fa-ruler-vertical"></i>
+                    <span id="userHeight">Loading...</span> cm
+                </div>
+            </div>
+
+            <div class="detail-group">
+                <div class="detail-label">BMI</div>
+                <div class="detail-value">
+                    <i class="fas fa-calculator"></i>
+                    <span id="userBMI">Loading...</span>
+                </div>
+            </div>
+
+            <button class="edit-btn" onclick="editProfile()">
+                <i class="fas fa-edit"></i>
+                Edit Profile
+            </button>
+        </div>
+
+        <div class="profile-image">
+            <div class="image-container">
+                <img src="/default-avatar.png" alt="Profile Picture" class="profile-img" id="profileImage">
+            </div>
+            <button class="upload-btn" onclick="uploadImage()">
+                <i class="fas fa-camera"></i>
+                Upload Photo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Fetch user data when page loads
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/api/user');
+                const userData = await response.json();
+
+                // Update profile information
+                document.getElementById('userName').textContent = userData.name;
+                document.getElementById('userEmail').textContent = userData.email;
+                document.getElementById('userAge').textContent = userData.age;
+                document.getElementById('userWeight').textContent = userData.weight;
+                document.getElementById('userHeight').textContent = userData.height;
+                document.getElementById('userBMI').textContent = userData.bmi;
+
+                // Update profile image if exists
+                if (userData.profileImage) {
+                    document.getElementById('profileImage').src = userData.profileImage;
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        });
+
+        function editProfile() {
+            // Implement edit profile functionality
+            window.location.href = '/edit-profile';
+        }
+
+        function uploadImage() {
+            // Implement image upload functionality
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('profileImage', file);
+
+                    try {
+                        const response = await fetch('/api/upload-profile-image', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            document.getElementById('profileImage').src = data.imageUrl;
+                        } else {
+                            alert('Failed to upload image. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Error uploading image:', error);
+                        alert('An error occurred while uploading the image.');
+                    }
+                }
+            };
+            input.click();
+        }
+    </script>
+</body>
+</html> 

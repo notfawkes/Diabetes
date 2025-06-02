@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - DiabetesCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.6s ease;
+        }
+
+        h1 {
+            color: #2d8659;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeIn 0.6s ease;
+        }
+
+        label {
+            display: block;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #495057;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2d8659;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(45, 134, 89, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #2d8659, #1a472a);
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(45, 134, 89, 0.2);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #495057;
+        }
+
+        .register-link a {
+            color: #2d8659;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .register-link a:hover {
+            color: #1a472a;
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome Back</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email"><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" id="email" name="email" required>
+                <div class="error" id="emailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="password" name="password" required>
+                <div class="error" id="passwordError"></div>
+            </div>
+            <div class="error" id="serverError" style="text-align: center;"></div>
+            <button type="submit">
+                <i class="fas fa-sign-in-alt"></i>
+                Login
+                <div class="loading" id="loading"></div>
+            </button>
+        </form>
+        <div class="register-link">
+            Don't have an account? <a href="/register">Register here</a>
+        </div>
+    </div>
+
+    <script>
+        // Form validation and submission
+        const form = document.getElementById('loginForm');
+        const serverError = document.getElementById('serverError');
+        const loading = document.getElementById('loading');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            let isValid = true;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Reset errors
+            document.querySelectorAll('.error').forEach(error => error.style.display = 'none');
+
+            if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                document.getElementById('emailError').textContent = 'Please enter a valid email address';
+                document.getElementById('emailError').style.display = 'block';
+                isValid = false;
+            }
+
+            if (password.length < 6) {
+                document.getElementById('passwordError').textContent = 'Password must be at least 6 characters long';
+                document.getElementById('passwordError').style.display = 'block';
+                isValid = false;
+            }
+
+            if (isValid) {
+                try {
+                    loading.style.display = 'block';
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        serverError.textContent = data.error || 'Login failed. Please try again.';
+                        serverError.style.display = 'block';
+                    }
+                } catch (error) {
+                    serverError.textContent = 'An error occurred. Please try again.';
+                    serverError.style.display = 'block';
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

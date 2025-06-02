@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Prediction System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #2d8659;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .navbar-brand i {
+            font-size: 1.8rem;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-item a {
+            text-decoration: none;
+            color: #2d8659;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-item a:hover {
+            color: #1a472a;
+        }
+
+        .nav-item a i {
+            font-size: 1.1rem;
+        }
+
+        /* Main Content Styles */
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 100px;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: #2d8659;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .form-container {
+            display: flex;
+            gap: 30px;
+        }
+
+        .form-column {
+            flex: 1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-group:hover {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        label {
+            display: block;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        input[type="number"],
+        input[type="range"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            color: #495057;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            outline: none;
+            border: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #2d8659;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #1a472a;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #2d8659;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .radio-option input[type="radio"] {
+            accent-color: #2d8659;
+        }
+
+        .value-display {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #2d8659, #1a472a);
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(45, 134, 89, 0.3);
+        }
+
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            display: none;
+            animation: fadeIn 0.5s ease;
+            background: linear-gradient(45deg, #2d8659, #1a472a);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2d8659;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .form-container {
+                flex-direction: column;
+            }
+
+            .navbar {
+                padding: 1rem;
+            }
+
+            .navbar-nav {
+                gap: 1rem;
+            }
+
+            .container {
+                margin-top: 80px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <i class="fas fa-heartbeat"></i>
+            DiabetesCare
+        </a>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+            </li>
+            <li class="nav-item">
+                <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Diabetes Prediction System</h1>
+        <form id="predictionForm">
+            <div class="form-container">
+                <div class="form-column">
+                    <div class="form-group">
+                        <label><i class="fas fa-baby"></i> Pregnancy Status</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="pregnancies" name="pregnancies" value="1">
+                            <label for="pregnancies">Currently Pregnant</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="glucose"><i class="fas fa-tint"></i> Glucose Level (mg/dL)</label>
+                        <input type="range" id="glucose" name="glucose" min="0" max="300" value="100">
+                        <div class="value-display" id="glucoseValue">100 mg/dL</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bloodPressure"><i class="fas fa-heartbeat"></i> Blood Pressure (mm Hg)</label>
+                        <input type="range" id="bloodPressure" name="bloodPressure" min="0" max="200" value="80">
+                        <div class="value-display" id="bloodPressureValue">80 mm Hg</div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-ruler"></i> Skin Thickness Category</label>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" id="skinThin" name="skinThickness" value="20">
+                                <label for="skinThin">Thin</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="skinMedium" name="skinThickness" value="50" checked>
+                                <label for="skinMedium">Medium</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="skinThick" name="skinThickness" value="80">
+                                <label for="skinThick">Thick</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="insulin"><i class="fas fa-syringe"></i> Insulin Level (mu U/ml)</label>
+                        <input type="range" id="insulin" name="insulin" min="0" max="1000" value="100">
+                        <div class="value-display" id="insulinValue">100 mu U/ml</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="diabetesPedigree"><i class="fas fa-dna"></i> Diabetes Pedigree Function</label>
+                        <input type="range" id="diabetesPedigree" name="diabetesPedigree" min="0" max="3" step="0.1" value="0.5">
+                        <div class="value-display" id="diabetesPedigreeValue">0.5</div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Your Profile Data</label>
+                        <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                            <p>Age: <span id="userAge">Loading...</span> years</p>
+                            <p>BMI: <span id="userBMI">Loading...</span> kg/m²</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit">
+                <i class="fas fa-calculator"></i>
+                Predict Diabetes Risk
+            </button>
+        </form>
+        <div id="result"></div>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Calculating prediction...</p>
+        </div>
+    </div>
+
+    <script>
+        // Fetch user data when page loads
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                if (data) {
+                    document.getElementById('userAge').textContent = data.age;
+                    document.getElementById('userBMI').textContent = data.bmi;
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        }
+
+        // Call fetchUserData when page loads
+        fetchUserData();
+
+        // Update range input values
+        const rangeInputs = ['glucose', 'bloodPressure', 'insulin'];
+        rangeInputs.forEach(id => {
+            const input = document.getElementById(id);
+            const display = document.getElementById(id + 'Value');
+            input.addEventListener('input', () => {
+                display.textContent = `${input.value}${id === 'glucose' ? ' mg/dL' : id === 'bloodPressure' ? ' mm Hg' : ' mu U/ml'}`;
+            });
+        });
+
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            // Get form values
+            const pregnancies = document.getElementById('pregnancies').checked ? 1 : 0;
+            const glucose = document.getElementById('glucose').value;
+            const bloodPressure = document.getElementById('bloodPressure').value;
+            const skinThickness = document.querySelector('input[name="skinThickness"]:checked').value;
+            const insulin = document.getElementById('insulin').value;
+            const diabetesPedigree = document.getElementById('diabetesPedigree').value;
+            
+            // Get age and BMI from user data
+            const userAge = document.getElementById('userAge').textContent;
+            const userBMI = document.getElementById('userBMI').textContent;
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pregnancies,
+                        glucose,
+                        bloodPressure,
+                        skinThickness,
+                        insulin,
+                        bmi: userBMI,
+                        diabetesPedigree,
+                        age: userAge
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const probability = (data.probability * 100).toFixed(2);
+                    const riskLevel = data.riskScore > 7 ? 'Very High' : 
+                                    data.riskScore > 5 ? 'High' : 
+                                    data.riskScore > 3 ? 'Moderate' : 'Low';
+                    
+                    result.innerHTML = `
+                        <h2 style="color: ${data.prediction ? '#ff4444' : '#4CAF50'}">
+                            ${data.prediction ? 'High Risk of Diabetes' : 'Low Risk of Diabetes'}
+                        </h2>
+                        <p>Risk Level: ${riskLevel}</p>
+                        <p>Probability: ${probability}%</p>
+                        <p>Risk Score: ${data.riskScore}/10</p>
+                        <div style="margin-top: 15px; font-size: 0.9em;">
+                            <p>Based on your inputs:</p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li>Glucose: ${glucose} mg/dL</li>
+                                <li>Blood Pressure: ${bloodPressure} mm Hg</li>
+                                <li>BMI: ${userBMI} kg/m²</li>
+                                <li>Age: ${userAge} years</li>
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<p style="color: #ff4444">Error: ${data.error || 'Failed to get prediction'}</p>`;
+                }
+            } catch (error) {
+                console.error('Prediction error:', error);
+                result.innerHTML = `<p style="color: #ff4444">Error: ${error.message}</p>`;
+            } finally {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 
