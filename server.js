@@ -554,39 +554,71 @@ app.post('/predict', predictLimiter, async (req, res) => {
         // Use the correct Python service URL
         const pythonServiceUrl = 'https://diabetes-kwrz.onrender.com';
         
-        // Make the prediction request
-        const response = await fetch(`${pythonServiceUrl}/predict`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(predictionData)
-        });
+        try {
+            // First check if the Python service is accessible
+            const healthCheck = await fetch(`${pythonServiceUrl}/health`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
 
-        console.log('Python service response status:', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Python service error response:', errorText);
-            return res.status(response.status).json({ 
-                error: 'Prediction service error',
-                details: errorText
+            if (!healthCheck.ok) {
+                console.error('Python service health check failed:', await healthCheck.text());
+                return res.status(503).json({
+                    error: 'Prediction service unavailable',
+                    details: 'Health check failed'
+                });
+            }
+
+            // Make the prediction request
+            const response = await fetch(`${pythonServiceUrl}/predict`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(predictionData)
+            });
+
+            console.log('Python service response status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Python service error response:', errorText);
+                return res.status(response.status).json({ 
+                    error: 'Prediction service error',
+                    details: errorText
+                });
+            }
+
+            const data = await response.json();
+            console.log('Prediction response:', data);
+
+            if (!data || typeof data.prediction === 'undefined' || typeof data.probability === 'undefined') {
+                console.error('Invalid prediction response:', data);
+                return res.status(500).json({
+                    error: 'Invalid prediction response',
+                    details: 'Response missing required fields'
+                });
+            }
+            
+            res.json({
+                prediction: data.prediction,
+                probability: data.probability
+            });
+        } catch (fetchError) {
+            console.error('Error communicating with Python service:', fetchError);
+            return res.status(503).json({
+                error: 'Prediction service unavailable',
+                details: 'Failed to communicate with prediction service'
             });
         }
-
-        const data = await response.json();
-        console.log('Prediction response:', data);
-        
-        res.json({
-            prediction: data.prediction,
-            probability: data.probability
-        });
     } catch (error) {
         console.error('Prediction error:', error);
         console.error('Error stack:', error.stack);
         res.status(500).json({ 
-            error: 'Prediction service unavailable',
+            error: 'Internal server error',
             message: error.message,
             details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
