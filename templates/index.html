@@ -476,6 +476,42 @@
                 result.style.display = 'block';
             }
         });
+
+        async function getPrediction() {
+            try {
+                const response = await fetch('https://diabetes-node-server.onrender.com/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pregnancies: document.getElementById('pregnancies').value,
+                        glucose: document.getElementById('glucose').value,
+                        bloodPressure: document.getElementById('bloodPressure').value,
+                        skinThickness: document.getElementById('skinThickness').value,
+                        insulin: document.getElementById('insulin').value,
+                        bmi: document.getElementById('bmi').value,
+                        diabetesPedigree: document.getElementById('diabetesPedigree').value,
+                        age: document.getElementById('age').value
+                    }),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get prediction');
+                }
+
+                const data = await response.json();
+                // Update prediction result
+                document.getElementById('predictionResult').textContent = 
+                    data.prediction ? 'High Risk' : 'Low Risk';
+                document.getElementById('predictionProbability').textContent = 
+                    `${(data.probability * 100).toFixed(1)}%`;
+            } catch (error) {
+                console.error('Prediction error:', error);
+                alert('Failed to get prediction. Please try again.');
+            }
+        }
     </script>
 </body>
 </html> 

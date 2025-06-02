@@ -189,7 +189,7 @@ app.get('/dashboard', (req, res) => {
 
 app.get('/profile', (req, res) => {
     if (!req.session.userId) {
-        return res.redirect('/login');
+        return res.redirect('https://diabetes-node-server.onrender.com/login');
     }
     res.sendFile(path.join(__dirname, 'templates', 'profile.html'));
 });
@@ -369,19 +369,23 @@ app.post('/predict', predictLimiter, async (req, res) => {
 
     try {
         const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:10000';
+        console.log('Sending prediction request to:', pythonServiceUrl);
+        
         const response = await fetch(`${pythonServiceUrl}/predict`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(req.body)
+            body: JSON.stringify(req.body),
+            credentials: 'include'
         });
 
         if (!response.ok) {
-            throw new Error('Python server error');
+            throw new Error(`Python server error: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('Prediction response:', data);
         res.json(data);
     } catch (error) {
         console.error('Prediction error:', error);
