@@ -501,13 +501,15 @@ app.post('/predict', predictLimiter, async (req, res) => {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:10000';
+        // Use the deployed Python service URL
+        const pythonServiceUrl = 'https://diabetes-python-service.onrender.com';
         console.log('Sending prediction request to:', pythonServiceUrl);
         
         const response = await fetch(`${pythonServiceUrl}/predict`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(req.body),
@@ -515,7 +517,9 @@ app.post('/predict', predictLimiter, async (req, res) => {
         });
 
         if (!response.ok) {
-            throw new Error(`Python server error: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Python service error:', errorData);
+            throw new Error(errorData.message || `Python server error: ${response.status}`);
         }
 
         const data = await response.json();
@@ -540,7 +544,7 @@ app.post('/predict', predictLimiter, async (req, res) => {
         console.error('Prediction error:', error);
         res.status(500).json({ 
             error: 'Prediction service unavailable',
-            message: error.message 
+            message: error.message || 'Failed to connect to prediction service'
         });
     }
 });
