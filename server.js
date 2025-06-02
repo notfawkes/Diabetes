@@ -491,50 +491,92 @@ app.get('/health', (req, res) => {
 // Prediction endpoint with rate limiting
 app.post('/predict', predictLimiter, async (req, res) => {
     try {
-        console.log('Prediction request - Headers:', req.headers);
-        console.log('Prediction request - Session:', req.session);
-        console.log('Prediction request - Cookies:', req.cookies);
-        
-        const userId = req.session.userId || req.cookies?.userId;
-        if (!userId) {
-            console.log('No user ID in session or cookies for prediction');
-            return res.status(401).json({ error: 'Not authenticated' });
+        // Log the complete request details
+        console.log('Prediction request details:', {
+            headers: req.headers,
+            body: req.body,
+            cookies: req.cookies,
+            session: req.session
+        });
+
+        // Check if request body exists and is an object
+        if (!req.body || typeof req.body !== 'object') {
+            console.error('Invalid request body:', req.body);
+            return res.status(400).json({
+                error: 'Invalid request body',
+                details: 'Request body must be a JSON object'
+            });
         }
+
+        // Validate required fields
+        const requiredFields = ['pregnancies', 'glucose', 'bloodPressure', 'skinThickness', 'insulin', 'bmi', 'diabetesPedigree', 'age'];
+        const missingFields = requiredFields.filter(field => !(field in req.body));
+        
+        if (missingFields.length > 0) {
+            console.error('Missing required fields:', missingFields);
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                missingFields: missingFields
+            });
+        }
+
+        // Format and validate the prediction data
+        const predictionData = {};
+        for (const field of requiredFields) {
+            const value = req.body[field];
+            if (value === undefined || value === null || value === '') {
+                console.error(`Missing value for ${field}`);
+                return res.status(400).json({
+                    error: 'Missing value',
+                    field: field
+                });
+            }
+
+            // Convert to number and validate
+            const numValue = field === 'bmi' || field === 'diabetesPedigree' 
+                ? parseFloat(value) 
+                : parseInt(value);
+
+            if (isNaN(numValue)) {
+                console.error(`Invalid numeric value for ${field}:`, value);
+                return res.status(400).json({
+                    error: 'Invalid numeric value',
+                    field: field,
+                    value: value
+                });
+            }
+
+            predictionData[field] = numValue;
+        }
+
+        console.log('Formatted prediction data:', predictionData);
 
         // Use the correct Python service URL
         const pythonServiceUrl = 'https://diabetes-kwrz.onrender.com';
-        console.log('Sending prediction request to:', pythonServiceUrl);
         
+        // Make the prediction request
         const response = await fetch(`${pythonServiceUrl}/predict`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(req.body),
-            credentials: 'include'
+            body: JSON.stringify(predictionData)
         });
 
+        console.log('Python service response status:', response.status);
+        
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Python service error:', errorData);
-            throw new Error(errorData.message || `Python server error: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Python service error response:', errorText);
+            return res.status(response.status).json({ 
+                error: 'Prediction service error',
+                details: errorText
+            });
         }
 
         const data = await response.json();
         console.log('Prediction response:', data);
-        
-        // Set the userId cookie if it's not already set
-        if (!req.cookies?.userId && req.session.userId) {
-            res.cookie('userId', req.session.userId, {
-                secure: true,
-                httpOnly: true,
-                sameSite: 'none',
-                maxAge: 24 * 60 * 60 * 1000,
-                domain: 'diabetes-node-server.onrender.com'
-            });
-        }
         
         res.json({
             prediction: data.prediction,
@@ -542,9 +584,11 @@ app.post('/predict', predictLimiter, async (req, res) => {
         });
     } catch (error) {
         console.error('Prediction error:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({ 
             error: 'Prediction service unavailable',
-            message: error.message || 'Failed to connect to prediction service'
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
