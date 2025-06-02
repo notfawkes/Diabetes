@@ -6,11 +6,19 @@ const path = require('path');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+
+// Rate limiting configuration
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: { error: 'Too many login attempts, please try again after 15 minutes' }
+});
 
 // Middleware
 app.use(express.json());
@@ -19,8 +27,13 @@ app.use(express.static('public'));
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === 'production' }
+    saveUninitialized: false,
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'strict'
+    }
 }));
 
 // Google Sheets setup
@@ -211,8 +224,8 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Login endpoint
-app.post('/login', async (req, res) => {
+// Login endpoint with rate limiting
+app.post('/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
 
     try {
