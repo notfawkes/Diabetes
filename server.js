@@ -33,7 +33,8 @@ app.use(cors({
     origin: ['https://diabetes-kwrz.onrender.com', 'https://diabetes-node-server.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -42,16 +43,30 @@ app.use(express.static('public'));
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
         secure: true,
         httpOnly: true,
         sameSite: 'none',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        domain: '.onrender.com' // Allow cookies across subdomains
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
+
+// Middleware to handle cross-domain cookies
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin === 'https://diabetes-kwrz.onrender.com') {
+        res.cookie('userId', req.session.userId, {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000,
+            domain: 'diabetes-node-server.onrender.com'
+        });
+    }
+    next();
+});
 
 // Google Sheets setup
 const auth = new google.auth.GoogleAuth({
@@ -280,14 +295,21 @@ app.post('/login', loginLimiter, async (req, res) => {
             }
             console.log('Session created with userId:', user[0]);
             
-            // Set additional cookie for cross-domain access
+            // Set cookies for both domains
             res.cookie('userId', user[0], {
                 secure: true,
                 httpOnly: true,
                 sameSite: 'none',
                 maxAge: 24 * 60 * 60 * 1000,
-                domain: 'diabetes-node-server.onrender.com',
-                path: '/'
+                domain: 'diabetes-node-server.onrender.com'
+            });
+
+            res.cookie('userId', user[0], {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000,
+                domain: 'diabetes-kwrz.onrender.com'
             });
 
             res.json({ 
@@ -311,10 +333,11 @@ app.get('/logout', (req, res) => {
 app.get('/api/check-session', (req, res) => {
     console.log('Session check:', req.session);
     console.log('Cookies:', req.cookies);
-    if (req.session.userId || req.cookies.userId) {
+    const userId = req.session.userId || req.cookies.userId;
+    if (userId) {
         res.json({ 
             authenticated: true, 
-            userId: req.session.userId || req.cookies.userId 
+            userId: userId
         });
     } else {
         res.json({ authenticated: false });

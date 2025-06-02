@@ -382,7 +382,8 @@
                     credentials: 'include',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
@@ -422,7 +423,8 @@
                     credentials: 'include',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
@@ -457,8 +459,15 @@
         // Initialize the page
         async function initializePage() {
             console.log('Initializing page...');
-            await checkSession();
-            await fetchUserData();
+            try {
+                const isAuthenticated = await checkSession();
+                if (isAuthenticated) {
+                    await fetchUserData();
+                }
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                window.location.href = 'https://diabetes-node-server.onrender.com/login';
+            }
         }
 
         // Call initializePage when page loads
@@ -507,7 +516,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({
                         pregnancies,
