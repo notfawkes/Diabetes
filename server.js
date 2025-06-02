@@ -234,7 +234,7 @@ app.post('/register', async (req, res) => {
         req.session.userId = userId;
         res.json({ 
             success: true,
-            redirectUrl: 'https://diabetes-kwrz.onrender.com/dashboard'
+            redirectUrl: 'https://diabetes-kwrz.onrender.com/'
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -270,7 +270,7 @@ app.post('/login', loginLimiter, async (req, res) => {
         req.session.userId = user[0]; // id is at index 0
         res.json({ 
             success: true,
-            redirectUrl: 'https://diabetes-kwrz.onrender.com/dashboard'
+            redirectUrl: 'https://diabetes-kwrz.onrender.com/'
         });
     } catch (error) {
         console.error('Login error:', error);
