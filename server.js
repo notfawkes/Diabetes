@@ -209,10 +209,33 @@ app.get('/dashboard', (req, res) => {
 });
 
 app.get('/profile', (req, res) => {
-    if (!req.session.userId) {
-        return res.redirect('https://diabetes-node-server.onrender.com/login');
+    try {
+        console.log('Profile request - Headers:', req.headers);
+        console.log('Profile request - Session:', req.session);
+        console.log('Profile request - Cookies:', req.cookies);
+        
+        const userId = req.session.userId || req.cookies?.userId;
+        if (!userId) {
+            console.log('No user ID in session or cookies for profile');
+            return res.redirect('https://diabetes-node-server.onrender.com/login');
+        }
+
+        // Set the userId cookie if it's not already set
+        if (!req.cookies?.userId && req.session.userId) {
+            res.cookie('userId', req.session.userId, {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000,
+                domain: 'diabetes-node-server.onrender.com'
+            });
+        }
+
+        res.sendFile(path.join(__dirname, 'templates', 'profile.html'));
+    } catch (error) {
+        console.error('Profile route error:', error);
+        res.redirect('https://diabetes-node-server.onrender.com/login');
     }
-    res.sendFile(path.join(__dirname, 'templates', 'profile.html'));
 });
 
 // Registration endpoint
@@ -467,18 +490,25 @@ app.get('/health', (req, res) => {
 
 // Prediction endpoint with rate limiting
 app.post('/predict', predictLimiter, async (req, res) => {
-    if (!req.session.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-    }
-
     try {
+        console.log('Prediction request - Headers:', req.headers);
+        console.log('Prediction request - Session:', req.session);
+        console.log('Prediction request - Cookies:', req.cookies);
+        
+        const userId = req.session.userId || req.cookies?.userId;
+        if (!userId) {
+            console.log('No user ID in session or cookies for prediction');
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
         const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:10000';
         console.log('Sending prediction request to:', pythonServiceUrl);
         
         const response = await fetch(`${pythonServiceUrl}/predict`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(req.body),
             credentials: 'include'
@@ -490,6 +520,18 @@ app.post('/predict', predictLimiter, async (req, res) => {
 
         const data = await response.json();
         console.log('Prediction response:', data);
+        
+        // Set the userId cookie if it's not already set
+        if (!req.cookies?.userId && req.session.userId) {
+            res.cookie('userId', req.session.userId, {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000,
+                domain: 'diabetes-node-server.onrender.com'
+            });
+        }
+        
         res.json({
             prediction: data.prediction,
             probability: data.probability

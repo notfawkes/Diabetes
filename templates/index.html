@@ -506,6 +506,12 @@
             result.style.display = 'none';
             
             try {
+                // First check if session is valid
+                const isAuthenticated = await checkSession();
+                if (!isAuthenticated) {
+                    throw new Error('Session expired. Please log in again.');
+                }
+
                 // Get form values
                 const pregnancies = document.getElementById('pregnancies').checked ? 1 : 0;
                 const glucose = parseInt(document.getElementById('glucose').value);
@@ -516,12 +522,7 @@
                 const bmi = parseFloat(document.getElementById('userBMI').textContent);
                 const age = parseInt(document.getElementById('userAge').textContent);
 
-                // First check if session is valid
-                const isAuthenticated = await checkSession();
-                if (!isAuthenticated) {
-                    throw new Error('Session expired. Please log in again.');
-                }
-
+                console.log('Sending prediction request...');
                 const response = await fetch('https://diabetes-node-server.onrender.com/predict', {
                     method: 'POST',
                     headers: {
@@ -542,14 +543,14 @@
                     credentials: 'include'
                 });
                 
+                const data = await response.json();
+                
                 if (!response.ok) {
                     if (response.status === 401) {
                         throw new Error('Session expired. Please log in again.');
                     }
-                    throw new Error('Failed to get prediction');
+                    throw new Error(data.message || 'Failed to get prediction');
                 }
-                
-                const data = await response.json();
                 
                 if (!data || typeof data.prediction === 'undefined' || typeof data.probability === 'undefined') {
                     throw new Error('Invalid prediction response');
@@ -576,7 +577,7 @@
                 `;
             } catch (error) {
                 console.error('Prediction error:', error);
-                if (error.message.includes('Session expired')) {
+                if (error.message.includes('Session expired') || error.message.includes('Not authenticated')) {
                     window.location.href = 'https://diabetes-node-server.onrender.com/login';
                 } else {
                     result.innerHTML = `<p style="color: #ff4444">Error: ${error.message}</p>`;
