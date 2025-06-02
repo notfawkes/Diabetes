@@ -501,8 +501,8 @@ app.post('/predict', predictLimiter, async (req, res) => {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        // Use the deployed Python service URL
-        const pythonServiceUrl = 'https://diabetes-python-service.onrender.com';
+        // Use the correct Python service URL
+        const pythonServiceUrl = 'https://diabetes-kwrz.onrender.com';
         console.log('Sending prediction request to:', pythonServiceUrl);
         
         const response = await fetch(`${pythonServiceUrl}/predict`, {
