@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import joblib
 import numpy as np
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Load the model and scaler
 model = joblib.load('diabetes_model.joblib')
@@ -12,6 +14,10 @@ scaler = joblib.load('scaler.joblib')
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -44,8 +50,8 @@ def predict():
         return jsonify({
             'status': 'error',
             'message': str(e)
-        })
+        }), 500
 
 if __name__ == '__main__':
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
-    app.run(debug=debug_mode) 
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port) 

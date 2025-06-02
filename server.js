@@ -7,6 +7,8 @@ const dotenv = require('dotenv');
 const multer = require('multer');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+const fetch = require('node-fetch');
 
 // Load environment variables
 dotenv.config();
@@ -20,7 +22,14 @@ const loginLimiter = rateLimit({
     message: { error: 'Too many login attempts, please try again after 15 minutes' }
 });
 
+const predictLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // 10 attempts per hour
+    message: { error: 'Too many prediction requests, please try again later' }
+});
+
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -335,84 +344,49 @@ app.post('/api/upload-profile-image', upload.single('profileImage'), async (req,
     }
 });
 
-// Prediction endpoint
-app.post('/predict', async (req, res) => {
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy' });
+});
+
+// Prediction endpoint with rate limiting
+app.post('/predict', predictLimiter, async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
-        const {
-            pregnancies,
-            glucose,
-            bloodPressure,
-            skinThickness,
-            insulin,
-            bmi,
-            diabetesPedigree,
-            age
-        } = req.body;
+        const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:10000';
+        const response = await fetch(`${pythonServiceUrl}/predict`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(req.body)
+        });
 
-        // Validate required fields
-        if (!glucose || !bloodPressure || !skinThickness || !insulin || !bmi || !diabetesPedigree || !age) {
-            return res.status(400).json({ error: 'All fields are required' });
+        if (!response.ok) {
+            throw new Error('Python server error');
         }
 
-        // Convert string values to numbers
-        const features = {
-            pregnancies: parseInt(pregnancies) || 0,
-            glucose: parseFloat(glucose),
-            bloodPressure: parseFloat(bloodPressure),
-            skinThickness: parseFloat(skinThickness),
-            insulin: parseFloat(insulin),
-            bmi: parseFloat(bmi),
-            diabetesPedigree: parseFloat(diabetesPedigree),
-            age: parseInt(age)
-        };
-
-        // Simple risk calculation based on medical guidelines
-        let riskScore = 0;
-
-        // Glucose level (70-140 mg/dL is normal)
-        if (features.glucose > 140) riskScore += 2;
-        else if (features.glucose > 100) riskScore += 1;
-
-        // Blood Pressure (normal: 90-120/60-80)
-        if (features.bloodPressure > 140) riskScore += 2;
-        else if (features.bloodPressure > 120) riskScore += 1;
-
-        // BMI (normal: 18.5-24.9)
-        if (features.bmi > 30) riskScore += 2;
-        else if (features.bmi > 25) riskScore += 1;
-
-        // Age (risk increases with age)
-        if (features.age > 45) riskScore += 2;
-        else if (features.age > 35) riskScore += 1;
-
-        // Insulin (normal: 3-25 μU/mL)
-        if (features.insulin > 25) riskScore += 1;
-
-        // Diabetes Pedigree Function (higher values indicate higher risk)
-        if (features.diabetesPedigree > 1.5) riskScore += 2;
-        else if (features.diabetesPedigree > 0.8) riskScore += 1;
-
-        // Calculate probability (0-1)
-        const probability = Math.min(riskScore / 10, 1);
-
-        // Determine prediction (threshold at 0.5)
-        const prediction = probability > 0.5;
-
-        res.json({
-            status: 'success',
-            prediction,
-            probability,
-            riskScore,
-            features
-        });
+        const data = await response.json();
+        res.json(data);
     } catch (error) {
         console.error('Prediction error:', error);
-        res.status(500).json({ error: 'Prediction failed. Please try again.' });
+        res.status(500).json({ 
+            error: 'Prediction service unavailable',
+            message: error.message 
+        });
     }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ 
+        error: 'Something went wrong!',
+        message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+    });
 });
 
 // Start server
