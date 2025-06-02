@@ -331,31 +331,58 @@ app.get('/logout', (req, res) => {
 
 // Add a session check endpoint
 app.get('/api/check-session', (req, res) => {
-    console.log('Session check:', req.session);
-    console.log('Cookies:', req.cookies);
-    const userId = req.session.userId || req.cookies.userId;
-    if (userId) {
-        res.json({ 
-            authenticated: true, 
-            userId: userId
+    try {
+        console.log('Session check - Headers:', req.headers);
+        console.log('Session check - Session:', req.session);
+        console.log('Session check - Cookies:', req.cookies);
+        
+        // Check both session and cookies
+        const sessionUserId = req.session.userId;
+        const cookieUserId = req.cookies.userId;
+        
+        console.log('Session userId:', sessionUserId);
+        console.log('Cookie userId:', cookieUserId);
+        
+        if (sessionUserId || cookieUserId) {
+            // If we have a cookie but no session, restore the session
+            if (!sessionUserId && cookieUserId) {
+                req.session.userId = cookieUserId;
+                req.session.save((err) => {
+                    if (err) {
+                        console.error('Error saving session:', err);
+                    }
+                });
+            }
+            
+            res.json({ 
+                authenticated: true, 
+                userId: sessionUserId || cookieUserId
+            });
+        } else {
+            res.json({ authenticated: false });
+        }
+    } catch (error) {
+        console.error('Session check error:', error);
+        res.status(500).json({ 
+            error: 'Session check failed',
+            message: error.message
         });
-    } else {
-        res.json({ authenticated: false });
     }
 });
 
 // Get user data endpoint
 app.get('/api/user', async (req, res) => {
-    console.log('Session data:', req.session);
-    console.log('Cookies:', req.cookies);
-    
-    const userId = req.session.userId || req.cookies.userId;
-    if (!userId) {
-        console.log('No user ID in session or cookies');
-        return res.status(401).json({ error: 'Not authenticated' });
-    }
-
     try {
+        console.log('User data request - Headers:', req.headers);
+        console.log('User data request - Session:', req.session);
+        console.log('User data request - Cookies:', req.cookies);
+        
+        const userId = req.session.userId || req.cookies.userId;
+        if (!userId) {
+            console.log('No user ID in session or cookies');
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
         const users = await getAllUsers();
         console.log('All users:', users);
         const user = users.find(user => user[0] === userId.toString());
@@ -380,7 +407,10 @@ app.get('/api/user', async (req, res) => {
         res.json(userData);
     } catch (error) {
         console.error('Error fetching user data:', error);
-        res.status(500).json({ error: 'Failed to fetch user data' });
+        res.status(500).json({ 
+            error: 'Failed to fetch user data',
+            message: error.message
+        });
     }
 });
 
@@ -471,10 +501,21 @@ app.post('/predict', predictLimiter, async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Global error handler:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({ 
         error: 'Something went wrong!',
-        message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+        message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+        stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    console.log('404 Not Found:', req.method, req.url);
+    res.status(404).json({ 
+        error: 'Not Found',
+        message: 'The requested resource was not found'
     });
 });
 
@@ -482,4 +523,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV || 'development');
 }); 

@@ -377,6 +377,7 @@
         // Check session status
         async function checkSession() {
             try {
+                console.log('Checking session...');
                 const response = await fetch('https://diabetes-node-server.onrender.com/api/check-session', {
                     method: 'GET',
                     credentials: 'include',
@@ -387,12 +388,12 @@
                     }
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Session check failed');
-                }
-                
                 const data = await response.json();
                 console.log('Session check response:', data);
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Session check failed');
+                }
                 
                 if (!data.authenticated) {
                     console.log('Not authenticated, redirecting to login');
@@ -402,6 +403,11 @@
                 return true;
             } catch (error) {
                 console.error('Session check error:', error);
+                if (error.message.includes('Failed to fetch')) {
+                    alert('Unable to connect to the server. Please check your internet connection.');
+                } else {
+                    alert('Session error: ' + error.message);
+                }
                 window.location.href = 'https://diabetes-node-server.onrender.com/login';
                 return false;
             }
@@ -428,16 +434,12 @@
                     }
                 });
                 
+                const data = await response.json();
+                
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        console.log('Unauthorized, redirecting to login');
-                        window.location.href = 'https://diabetes-node-server.onrender.com/login';
-                        return;
-                    }
-                    throw new Error(`Failed to fetch user data: ${response.status}`);
+                    throw new Error(data.message || `Failed to fetch user data: ${response.status}`);
                 }
                 
-                const data = await response.json();
                 console.log('Received user data:', data);
                 
                 if (data) {
@@ -448,10 +450,13 @@
                 }
             } catch (error) {
                 console.error('Error fetching user data:', error);
-                if (error.message.includes('401')) {
-                    window.location.href = 'https://diabetes-node-server.onrender.com/login';
+                if (error.message.includes('Failed to fetch')) {
+                    alert('Unable to connect to the server. Please check your internet connection.');
                 } else {
-                    alert('Failed to load user data. Please try again.');
+                    alert('Error loading user data: ' + error.message);
+                }
+                if (error.message.includes('401') || error.message.includes('Not authenticated')) {
+                    window.location.href = 'https://diabetes-node-server.onrender.com/login';
                 }
             }
         }
@@ -466,6 +471,11 @@
                 }
             } catch (error) {
                 console.error('Error initializing page:', error);
+                if (error.message.includes('Failed to fetch')) {
+                    alert('Unable to connect to the server. Please check your internet connection.');
+                } else {
+                    alert('Error initializing page: ' + error.message);
+                }
                 window.location.href = 'https://diabetes-node-server.onrender.com/login';
             }
         }
