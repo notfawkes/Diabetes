@@ -40,9 +40,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: true,
+    saveUninitialized: true,
     cookie: { 
         secure: true,
         httpOnly: true,
@@ -246,6 +246,7 @@ app.post('/register', async (req, res) => {
 // Login endpoint with rate limiting
 app.post('/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email); // Debug log
 
     try {
         // Validate required fields
@@ -258,17 +259,21 @@ app.post('/login', loginLimiter, async (req, res) => {
         const user = users.find(user => user[2] === email); // email is at index 2
 
         if (!user) {
+            console.log('User not found'); // Debug log
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
         // Verify password
         const validPassword = await bcrypt.compare(password, user[3]); // password is at index 3
         if (!validPassword) {
+            console.log('Invalid password'); // Debug log
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
         // Create session
         req.session.userId = user[0]; // id is at index 0
+        console.log('Session created with userId:', user[0]); // Debug log
+        
         res.json({ 
             success: true,
             redirectUrl: 'https://diabetes-kwrz.onrender.com/'
@@ -287,28 +292,35 @@ app.get('/logout', (req, res) => {
 
 // Get user data endpoint
 app.get('/api/user', async (req, res) => {
+    console.log('Session data:', req.session); // Debug log
     if (!req.session.userId) {
+        console.log('No user ID in session'); // Debug log
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
         const users = await getAllUsers();
+        console.log('All users:', users); // Debug log
         const user = users.find(user => user[0] === req.session.userId.toString());
+        console.log('Found user:', user); // Debug log
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json({
+        const userData = {
             id: user[0],
             name: user[1],
             email: user[2],
-            age: parseInt(user[4]),
-            weight: parseFloat(user[5]),
-            height: parseFloat(user[6]),
-            bmi: parseFloat(user[7]),
+            age: parseInt(user[4]) || 0,
+            weight: parseFloat(user[5]) || 0,
+            height: parseFloat(user[6]) || 0,
+            bmi: parseFloat(user[7]) || 0,
             profileImage: user[8] || '/default-avatar.png'
-        });
+        };
+
+        console.log('Sending user data:', userData); // Debug log
+        res.json(userData);
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ error: 'Failed to fetch user data' });
