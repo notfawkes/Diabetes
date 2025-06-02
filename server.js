@@ -571,14 +571,16 @@ app.post('/predict', predictLimiter, async (req, res) => {
                 });
             }
 
-            // Make the prediction request
+            // Make the prediction request with the exact format expected by the Python service
             const response = await fetch(`${pythonServiceUrl}/predict`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify(predictionData)
+                body: JSON.stringify({
+                    data: [Object.values(predictionData)] // Format as array of values
+                })
             });
 
             console.log('Python service response status:', response.status);
