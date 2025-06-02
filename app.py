@@ -5,7 +5,15 @@ import numpy as np
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Configure CORS
+CORS(app, resources={
+    r"/*": {
+        "origins": ["https://diabetes-node-server.onrender.com", "https://diabetes-kwrz.onrender.com"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+        "supports_credentials": True
+    }
+})
 
 # Load the model and scaler
 model = joblib.load('diabetes_model.joblib')
@@ -24,17 +32,26 @@ def health_check():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get values from the form
-        features = [
-            float(request.form['pregnancies']),
-            float(request.form['glucose']),
-            float(request.form['bloodPressure']),
-            float(request.form['skinThickness']),
-            float(request.form['insulin']),
-            float(request.form['bmi']),
-            float(request.form['diabetesPedigree']),
-            float(request.form['age'])
-        ]
+        # Get data from JSON request
+        data = request.get_json()
+        
+        if not data or 'data' not in data:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid request format. Expected JSON with "data" field containing features array.'
+            }), 400
+
+        # Get features from the data array
+        features = data['data'][0]  # Get the first array of features
+        
+        if len(features) != 8:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid number of features. Expected 8 features.'
+            }), 400
+
+        # Convert features to float
+        features = [float(x) for x in features]
         
         # Scale the features
         features_scaled = scaler.transform([features])
@@ -48,6 +65,11 @@ def predict():
             'probability': float(probability),
             'status': 'success'
         })
+    except ValueError as ve:
+        return jsonify({
+            'status': 'error',
+            'message': f'Invalid feature values: {str(ve)}'
+        }), 400
     except Exception as e:
         return jsonify({
             'status': 'error',

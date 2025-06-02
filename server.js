@@ -34,7 +34,7 @@ app.use(cors({
     origin: ['https://diabetes-kwrz.onrender.com', 'https://diabetes-node-server.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json());
@@ -551,7 +551,7 @@ app.post('/predict', predictLimiter, async (req, res) => {
 
         console.log('Formatted prediction data:', predictionData);
 
-        // Use the correct Python service URL with port 10000 (Render's default)
+        // Use the correct Python service URL
         const pythonServiceUrl = 'https://diabetes-kwrz.onrender.com';
         
         try {
@@ -559,7 +559,8 @@ app.post('/predict', predictLimiter, async (req, res) => {
             const healthCheck = await fetch(`${pythonServiceUrl}/health`, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Origin': 'https://diabetes-node-server.onrender.com'
                 }
             });
 
@@ -576,7 +577,8 @@ app.post('/predict', predictLimiter, async (req, res) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Origin': 'https://diabetes-node-server.onrender.com'
                 },
                 body: JSON.stringify({
                     data: [Object.values(predictionData)] // Format as array of values
