@@ -26,6 +26,7 @@ A full-stack web application for predicting diabetes risk based on various healt
 ├── templates/          # HTML templates
 └── requirements.txt    # Python dependencies
 ```
+The Node.js server (`server.js`) handles user authentication, profile management, and serves static files and HTML templates. It communicates with the Python Flask server (`app.py`) to perform diabetes risk predictions.
 
 ## Setup
 
@@ -90,6 +91,10 @@ A full-stack web application for predicting diabetes risk based on various healt
 - Flask
 - Scikit-learn
 - Joblib
+
+### Machine Learning Model
+- The system uses a **Random Forest Classifier** model for diabetes prediction.
+- The model was trained on the **Pima Indians Diabetes Dataset** (`diabetes.csv`).
 
 ### Frontend
 - HTML/CSS/JavaScript
