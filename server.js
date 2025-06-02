@@ -9,6 +9,7 @@ const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const fetch = require('node-fetch');
+const cookieParser = require('cookie-parser');
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use(cookieParser());
 
 // Session configuration
 app.use(session({
@@ -57,13 +59,15 @@ app.use(session({
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (origin === 'https://diabetes-kwrz.onrender.com') {
-        res.cookie('userId', req.session.userId, {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000,
-            domain: 'diabetes-node-server.onrender.com'
-        });
+        if (req.session.userId) {
+            res.cookie('userId', req.session.userId, {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+                maxAge: 24 * 60 * 60 * 1000,
+                domain: 'diabetes-node-server.onrender.com'
+            });
+        }
     }
     next();
 });
@@ -338,7 +342,7 @@ app.get('/api/check-session', (req, res) => {
         
         // Check both session and cookies
         const sessionUserId = req.session.userId;
-        const cookieUserId = req.cookies.userId;
+        const cookieUserId = req.cookies?.userId;
         
         console.log('Session userId:', sessionUserId);
         console.log('Cookie userId:', cookieUserId);
@@ -377,7 +381,7 @@ app.get('/api/user', async (req, res) => {
         console.log('User data request - Session:', req.session);
         console.log('User data request - Cookies:', req.cookies);
         
-        const userId = req.session.userId || req.cookies.userId;
+        const userId = req.session.userId || req.cookies?.userId;
         if (!userId) {
             console.log('No user ID in session or cookies');
             return res.status(401).json({ error: 'Not authenticated' });
